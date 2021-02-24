@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="com.carbonblack.CbResponse.pkg" postinstall-action="none" version="0" format-version="2" generator-version="InstallCmds-714 (19D76)" auth="root">
+    <payload numberOfFiles="53" installKBytes="12486"/>
+    <bundle path="./Applications/VMware Carbon Black EDR.app" id="com.carbonblack.CbOsxSensorService" CFBundleShortVersionString="1.0" CFBundleVersion="1"/>
+    <bundle path="./Applications/VMware Carbon Black EDR.app/Contents/XPCServices/CbDigitalSignatureHelper.xpc" id="com.carbonblack.service.CbDigitalSignatureHelper" CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="1"/>
+    <bundle-version>
+        <bundle id="com.carbonblack.CbOsxSensorService"/>
+    </bundle-version>
+    <upgrade-bundle>
+        <bundle id="com.carbonblack.CbOsxSensorService"/>
+    </upgrade-bundle>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier>
+        <bundle id="com.carbonblack.CbOsxSensorService"/>
+    </strict-identifier>
+    <relocate>
+        <bundle id="com.carbonblack.CbOsxSensorService"/>
+    </relocate>
+    <scripts>
+        <preinstall file="./preinstall"/>
+        <postinstall file="./postinstall"/>
+    </scripts>
+</pkg-info>

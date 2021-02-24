@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Make sure only root can run our script
+if [[ $EUID -ne 0 ]]; then
+    echo This script must be run as root
+    exit 1
+fi
+
+source constants.sh
+
+echo STARTING SENSOR POSTFLIGHT SCRIPT >> $LOG 2>&1
+date >> $LOG 2>&1
+
+source common.sh
+
+# Verify permissions on /Applications/CarbonBlack
+chmod 755 "/Applications/"${APP_NAME}".app"
+# CB-24384: Common Criteria- permissions within /var/lib/cb must be 600
+chmod 600 /var/lib/cb/sensorsettings.ini
+
+
+# Launch daemon
+echo "Launching daemon..." >> $LOG 2>&1
+
+launchctl load /Library/LaunchDaemons/com.carbonblack.CbDigitalSignatureHelper.plist >> $LOG 2>&1
+launchctl load /Library/LaunchDaemons/com.carbonblack.daemon.plist >> $LOG 2>&1
+
+
+# Load system extensions
+if useSystemExtension; then
+    echo "Loading System Extension" >> $LOG 2>&1
+    if [ -z "$SUDO_UID" ]; then
+        LUID=$(launchctl manageruid)
+    else
+        LUID=$SUDO_UID
+    fi
+    # open's of the app sometimes fails to launch the container - getting a kLSNoExecutableErr
+    # direct calls of the binary seem to work better
+    EDRCONTAINER="/Applications/${APP_NAME}.app/Contents/Helpers/es-loader.app/Contents/MacOS/es-loader"
+    launchctl asuser $LUID  "$EDRCONTAINER" --start >> $LOG 2>&1
+fi
+
+# Remove the upgrade job if there is one
+CBUPGRADE=$(sudo launchctl list | grep com.carbonblack.Upgrade)
+if ( test -n "$CBUPGRADE" ); then
+    launchctl remove com.carbonblack.Upgrade
+fi
+
+echo EXITING SENSOR POSTFLIGHT SCRIPT >> $LOG 2>&1

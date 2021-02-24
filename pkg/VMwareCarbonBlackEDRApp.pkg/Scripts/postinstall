@@ -1,0 +1,15 @@
+#! /bin/bash
+
+source constants.sh
+
+# helper function to ensure we always log our exit line
+function exit {
+    echo "EXITING SENSOR POSTINSTALL SCRIPT" >> $LOG 2>&1
+    command exit "$1"
+}
+
+echo "STARTING SENSOR POSTINSTALL SCRIPT" >> $LOG 2>&1
+
+./postflight
+
+exit 0

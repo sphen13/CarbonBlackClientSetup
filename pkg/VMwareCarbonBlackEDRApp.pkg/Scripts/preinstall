@@ -1,0 +1,153 @@
+#!/bin/bash
+
+# Make sure only root can run our script
+if [[ $EUID -ne 0 ]]; then
+    echo This script must be run as root
+    exit 1
+fi
+
+source constants.sh
+
+if [[ -f $LOG ]]; then
+    printf "\n=================================\n\n" >> $LOG
+fi
+
+# first check if any workarounds are necessary
+(bash workarounds.sh)
+
+{
+    echo "STARTING SENSOR PREINSTALL SCRIPT"
+    date
+    echo "OS Version: $(/usr/bin/sw_vers -productVersion) ($(/usr/bin/sw_vers -buildVersion))"
+    echo ""
+} >> $LOG
+
+# helper function to ensure we always log our exit line
+function exit {
+    echo "EXITING SENSOR PREINSTALL SCRIPT" >> $LOG 2>&1
+    command exit "$1"
+}
+
+# source this after setting up the log file to make sure any output
+# from it is within our section
+source common.sh
+
+CB_INSTALLED_PKGS=$(pkgutil --pkgs="com*.carbonblack.*")
+if [[ -z $CB_INSTALLED_PKGS ]]; then
+    echo "No existing sensor installation, proceeding with fresh install" >> $LOG
+else
+    echo "Existing sensor install detected:" >> $LOG
+    for pkg in $CB_INSTALLED_PKGS; do
+        pkgutil --info "$pkg" | sed 's/^/  /' >> $LOG 2>&1
+        echo "" >> $LOG 2>&1
+    done
+
+    echo "" >> $LOG 2>&1
+    echo "Stopping the VMware Carbon Black EDR sensor..." >> $LOG 2>&1
+
+    # Wait for the daemon to stop before proceeding.
+    CB_DAEMON=com.carbonblack.daemon
+
+    cbdpid=$(sudo launchctl list | grep "$CB_DAEMON" | awk '{print $1}')
+
+    if [[ -z $cbdpid ]]; then
+        echo "Service $CB_DAEMON not currently running" >> $LOG 2>&1
+    else
+        # unregister the system proxy calls by attempting to unload the kext
+        # it will fail to unload since the daemon is running, but will cause
+        # the hooks to get unregistered, preventing a panic when it's later
+        # unloaded for real
+
+        if isKextLoaded $PROCMON_BUNDLE && [[ "$restartRequired" == false ]]; then
+            echo "Unregistering procmon from system proxy calls..." >> $LOG 2>&1
+            # suppress the output/ignore errors - we know this will fail
+            kextunload -q -b $PROCMON_BUNDLE
+            sleep 5s
+        fi
+
+        sudo launchctl unload "/Library/LaunchDaemons/$CB_DAEMON.plist" &> /dev/null
+        startTime=$(date +%s)
+        while ps -p "$cbdpid" &> /dev/null; do
+            sleep 1
+            curTime=$(($(date +%s)-startTime))
+
+            ## after 1 minute - kill the process
+            if (test $curTime -gt 60) ; then
+                echo "Daemon did not shutdown properly. Killing the process" >> $LOG 2>&1
+                kill -9 "$cbdpid"
+            fi
+        done;
+
+        echo "Stopped $CB_DAEMON service" >> $LOG 2>&1
+    fi
+
+    # Nothing is really "tied" to CbDigitalSignatureHelper, so we'll just unload it.
+    echo "Unloading com.carbonblack.CbDigitalSignatureHelper" >> $LOG
+    launchctl unload /Library/LaunchDaemons/com.carbonblack.CbDigitalSignatureHelper.plist
+
+    if [[ "$restartRequired" == false ]]; then
+        if isKextLoaded $PROCMON_BUNDLE; then
+            unloadKext $PROCMON_BUNDLE
+        fi
+    
+        if isKextLoaded $NETMON_BUNDLE; then
+            unloadKext $NETMON_BUNDLE
+        fi
+    else
+        echo "Kernel drivers will not be unloaded, daemon will run with reduced functionality until reboot." >> $LOG
+    fi
+
+    # remove the application directory. it will get recreated on install
+    if [[ -d "/Applications/CarbonBlack" ]]; then
+        rm -rfv "/Applications/CarbonBlack/"
+    fi
+
+    if [[ -d "/Applications/"APP_NAME".app" ]]; then
+        rm -rfv "/Applications/"APP_NAME".app"
+    fi
+fi
+
+echo "" >> $LOG
+
+# Only create the data directory if it doesn't exist
+if [[ ! -d "/var/lib/cb" ]]; then
+    # Create directory
+    mkdir /var/lib/cb >> $LOG 2>&1
+    chown root:wheel /var/lib/cb
+    chmod -R 700 /var/lib/cb
+    CBINSTALLCREATED_DATADIR=true
+    echo "VMware Carbon Black EDR Sensor data directory created." >> $LOG 2>&1
+
+    # copy sensorsettings.ini
+    INI_PATH=$(dirname "$1")/sensorsettings.ini
+    if [[ ! -f $INI_PATH ]]; then
+        osascript -e 'tell app "System Events" to display alert "Installation failed" message "Could not find sensorsettings.ini. Make sure it is located in the same directory as the installer package."'
+        echo "Install aborted because $INI_PATH missing" >> $LOG
+        if [[ $CBINSTALLCREATED_DATADIR = true ]]; then
+            echo "Deleting VMware Carbon Black EDR Sensor data directory created by installer" >> $LOG
+            rm -rf /var/lib/cb
+        fi
+        exit 1
+    fi
+
+    echo "Copying $INI_PATH to data directory" >> $LOG 2>&1
+    if ! cp "$INI_PATH" /var/lib/cb/ >> $LOG 2>&1; then
+        echo "Failed to copy $INI_PATH to VMware Carbon Black EDR Sensor data directory" >> $LOG
+
+        # Only remove the data dir if the installer created it.
+        if [[ $CBINSTALLCREATED_DATADIR = true ]]; then
+            echo "Deleting VMware Carbon Black EDR Sensor data directory created by installer" >> $LOG
+            rm -rf /var/lib/cb
+        fi
+
+        exit 1
+    # CB-24384: Common Criteria- permissions within /var/lib/cb must be 600
+    else
+        echo "Changing permissions of sensorsettings.ini to 600"
+        chmod 600 /var/lib/cb/sensorsettings.ini
+    fi
+else
+    echo "VMware Carbon Black EDR Sensor data directory exists, not overwriting." >> $LOG 2>&1
+fi
+
+exit 0

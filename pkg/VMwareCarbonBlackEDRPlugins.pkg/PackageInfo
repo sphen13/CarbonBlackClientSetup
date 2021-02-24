@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="com.vmware.carbonblack.edr.plugins.pkg" postinstall-action="none" version="0" format-version="2" generator-version="InstallCmds-714 (19D76)" auth="root">
+    <payload numberOfFiles="31" installKBytes="618"/>
+    <bundle path="./Library/Extensions/CbOsxSensorNetmon.kext" id="com.carbonblack.CbOsxSensorNetmon" CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1"/>
+    <bundle path="./Library/Extensions/CbOsxSensorProcmon.kext" id="com.carbonblack.CbOsxSensorProcmon" CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1"/>
+    <bundle path="./Library/Extensions/CbOsxSensorProcmon.kext/Contents/PlugIns/cbsystemproxy.kext" id="com.carbonblack.cbsystemproxy.70fc1" CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1"/>
+    <bundle-version>
+        <bundle id="com.carbonblack.CbOsxSensorNetmon"/>
+        <bundle id="com.carbonblack.CbOsxSensorProcmon"/>
+    </bundle-version>
+    <upgrade-bundle>
+        <bundle id="com.carbonblack.CbOsxSensorNetmon"/>
+        <bundle id="com.carbonblack.CbOsxSensorProcmon"/>
+    </upgrade-bundle>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier/>
+    <relocate/>
+</pkg-info>

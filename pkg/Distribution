@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<installer-gui-script minSpecVersion="1">
+    <allowed-os-versions>
+        <os-version min="10.12.0"/>
+    </allowed-os-versions>
+    <pkg-ref id="com.carbonblack.CbResponse.pkg">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="1" id="com.carbonblack.service.CbDigitalSignatureHelper" path="Applications/VMware Carbon Black EDR.app/Contents/XPCServices/CbDigitalSignatureHelper.xpc"/>
+            <bundle CFBundleShortVersionString="1.0" CFBundleVersion="1" id="com.carbonblack.CbOsxSensorService" path="Applications/VMware Carbon Black EDR.app"/>
+        </bundle-version>
+    </pkg-ref>
+    <pkg-ref id="com.vmware.carbonblack.edr.plugins.pkg">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1" id="com.carbonblack.cbsystemproxy.70fc1" path="Library/Extensions/CbOsxSensorProcmon.kext/Contents/PlugIns/cbsystemproxy.kext"/>
+            <bundle CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1" id="com.carbonblack.CbOsxSensorProcmon" path="Library/Extensions/CbOsxSensorProcmon.kext"/>
+            <bundle CFBundleShortVersionString="7.0.1.16317" CFBundleVersion="2011.02.70fc1" id="com.carbonblack.CbOsxSensorNetmon" path="Library/Extensions/CbOsxSensorNetmon.kext"/>
+        </bundle-version>
+    </pkg-ref>
+    <options customize="never" require-scripts="false"/>
+    <background file="edr-favicon-300x300.png" scaling="proportional" alignment="bottomleft"/>
+    <background-darkAqua file="edr-favicon-300x300.png" scaling="proportional" alignment="bottomleft"/>
+    <title>VMware Carbon Black EDR</title>
+    <script><![CDATA[
+    function kext_install_check()
+    {
+       if ((system.compareVersions(system.version.ProductVersion, '11.0.0') >= 0)
+            || (system.compareVersions(system.version.ProductVersion, '10.16.0') >= 0))
+       {
+          return false;
+       }
+      
+       return true;
+    }
+    ]]></script>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.vmware.carbonblack.edr.plugins.pkg"/>
+            <line choice="com.carbonblack.CbResponse.pkg"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.vmware.carbonblack.edr.plugins.pkg" visible="false" enabled="kext_install_check()" start_selected="kext_install_check()">
+        <pkg-ref id="com.vmware.carbonblack.edr.plugins.pkg"/>
+    </choice>
+    <pkg-ref id="com.vmware.carbonblack.edr.plugins.pkg" version="0" onConclusion="none" installKBytes="618">#VMwareCarbonBlackEDRPlugins.pkg</pkg-ref>
+    <choice id="com.carbonblack.CbResponse.pkg" visible="false">
+        <pkg-ref id="com.carbonblack.CbResponse.pkg"/>
+    </choice>
+    <pkg-ref id="com.carbonblack.CbResponse.pkg" version="0" onConclusion="none" installKBytes="12486">#VMwareCarbonBlackEDRApp.pkg</pkg-ref>
+</installer-gui-script>
