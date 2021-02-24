@@ -102,8 +102,8 @@ else
         rm -rfv "/Applications/CarbonBlack/"
     fi
 
-    if [[ -d "/Applications/"APP_NAME".app" ]]; then
-        rm -rfv "/Applications/"APP_NAME".app"
+    if [[ -d "/Applications/$APP_NAME.app" ]]; then
+        rm -rfv "/Applications/$APP_NAME.app"
     fi
 fi
 

@@ -14,7 +14,7 @@ date >> $LOG 2>&1
 source common.sh
 
 # Verify permissions on /Applications/CarbonBlack
-chmod 755 "/Applications/"${APP_NAME}".app"
+chmod 755 "/Applications/${APP_NAME}.app"
 # CB-24384: Common Criteria- permissions within /var/lib/cb must be 600
 chmod 600 /var/lib/cb/sensorsettings.ini
 

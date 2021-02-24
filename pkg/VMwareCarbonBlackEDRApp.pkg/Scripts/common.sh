@@ -31,8 +31,8 @@ function getMachoVersion {
     xcode-select -p >> /dev/null
     if [[ $? -eq 0 ]]; then
         GETVERSTOOL="otool -P"
-    elif [[ -e "/Applications/"$APP_NAME".app/Contents/Resources/cbgetversion" ]]; then
-        GETVERSTOOL="/Applications/"$APP_NAME".app/Contents/Resources/cbgetversion"
+    elif [[ -e "/Applications/$APP_NAME.app/Contents/Resources/cbgetversion" ]]; then
+        GETVERSTOOL="/Applications/$APP_NAME.app/Contents/Resources/cbgetversion"
     else
         return 1
     fi
